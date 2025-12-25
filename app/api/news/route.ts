@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 
+// キャッシュを無効化し、常に最新のRSSを取得させる
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
-export privacy function GET() {
+export async function GET() {
   const SOURCES = [
     { name: "THE_HACKER_NEWS", url: "https://feeds.feedburner.com/TheHackersNews", color: "#1d4ed8" },
     { name: "BLEEPING_COMPUTER", url: "https://www.bleepingcomputer.com/feed/", color: "#000000" },
@@ -29,7 +30,7 @@ export privacy function GET() {
           
           const dateObj = new Date(pubDate);
           
-          // 【重要】Vercelサーバー上でも日本時間(JST)で日付文字列を作る
+          // 日本時間(JST)で日付を固定
           const jstDate = isNaN(dateObj.getTime()) 
             ? "Unknown" 
             : new Intl.DateTimeFormat('ja-JP', {
