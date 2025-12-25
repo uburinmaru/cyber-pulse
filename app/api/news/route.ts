@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
-// ★ここに取得したAPIキーを貼り付けてください
+// ★取得したAPIキーを正確に貼り付けてください
 const GEMINI_API_KEY = "AIzaSyAjoRhAlz9B9-EuIIjy_nYBDYNKBE-gdLs";
 
 export async function GET() {
@@ -42,27 +42,35 @@ export async function GET() {
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 40);
 
-    // --- Geminiによる要約処理の追加 ---
     let aiSummary = "AI分析を生成できませんでした。";
+
     if (filteredNews.length > 0) {
       try {
         const titlesForAi = filteredNews.slice(0, 15).map(n => n.title).join('\n');
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        
+        // ★モデル名を gemini-2.5-flash-lite-preview-09-2025 に指定
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `以下の最新サイバーセキュリティニュースのタイトルから、今日特に警戒すべき傾向を分析し、500文字程度の日本語で要約してください。重要なキーワードは太字にしてください。：\n\n${titlesForAi}` }] }]
+            contents: [{ parts: [{ text: `あなたはサイバーセキュリティの専門家です。以下の最新ニュースのタイトルから、今日特に警戒すべき傾向を分析し、500文字程度の日本語で要約してください。重要なキーワードは太字にしてください。：\n\n${titlesForAi}` }] }]
           })
         });
+
         const geminiData = await geminiRes.json();
-        aiSummary = geminiData.candidates[0].content.parts[0].text;
+
+        if (geminiData.error) {
+          aiSummary = `APIエラー: ${geminiData.error.message}`;
+        } else if (geminiData.candidates && geminiData.candidates[0].content) {
+          aiSummary = geminiData.candidates[0].content.parts[0].text;
+        }
       } catch (e) {
-        console.error("Gemini Error:", e);
+        aiSummary = "通信エラーが発生しました。";
       }
     }
 
     return NextResponse.json({ news: filteredNews, summary: aiSummary });
   } catch (error) {
-    return NextResponse.json({ news: [], summary: "" });
+    return NextResponse.json({ news: [], summary: "システムエラーが発生しました。" });
   }
 }
