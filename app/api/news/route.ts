@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 
-// キャッシュを無効化し、常に最新のRSSを取得させる
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
+
+// ★ここに取得したAPIキーを貼り付けてください
+const GEMINI_API_KEY = "AIzaSyAjoRhAlz9B9-EuIIjy_nYBDYNKBE-gdLs";
 
 export async function GET() {
   const SOURCES = [
@@ -18,30 +20,14 @@ export async function GET() {
         const res = await fetch(source.url, { cache: 'no-store' });
         const xml = await res.text();
         const items = xml.split('<item>').slice(1);
-
         return items.map(item => {
-          const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
-          const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/);
-          const pubDateMatch = item.match(/<pubDate>(.*?)<\/pubDate>/);
-
-          const title = titleMatch ? titleMatch[1].trim() : "";
-          const link = linkMatch ? linkMatch[1].trim() : "#";
-          const pubDate = pubDateMatch ? pubDateMatch[1] : "";
-          
+          const title = item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/)?.[1].trim() || "";
+          const link = item.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/)?.[1].trim() || "#";
+          const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || "";
           const dateObj = new Date(pubDate);
-          
-          // 日本時間(JST)で日付を固定
-          const jstDate = isNaN(dateObj.getTime()) 
-            ? "Unknown" 
-            : new Intl.DateTimeFormat('ja-JP', {
-                year: 'numeric', month: '2-digit', day: '2-digit',
-                timeZone: 'Asia/Tokyo' 
-              }).format(dateObj).replace(/\//g, '.');
-          
           return {
-            title,
-            link,
-            date: jstDate,
+            title, link,
+            date: isNaN(dateObj.getTime()) ? "Unknown" : new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tokyo' }).format(dateObj).replace(/\//g, '.'),
             timestamp: dateObj.getTime() || 0,
             source: source.name,
             sourceColor: source.color
@@ -51,19 +37,32 @@ export async function GET() {
     }));
 
     const incidentKeywords = ["ransomware", "breach", "leak", "hacked", "stolen", "attack", "compromised", "malware", "cyber", "espionage", "security", "threat", "incident"];
-    const noiseKeywords = ["patch", "update", "fix"];
-
     const filteredNews = allNews.flat()
-      .filter(n => n.title !== "" && n.timestamp !== 0)
-      .filter(n => 
-        incidentKeywords.some(key => n.title.toLowerCase().includes(key)) && 
-        !noiseKeywords.some(key => n.title.toLowerCase().includes(key))
-      )
+      .filter(n => n.title !== "" && n.timestamp !== 0 && incidentKeywords.some(key => n.title.toLowerCase().includes(key)))
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 40);
 
-    return NextResponse.json(filteredNews);
+    // --- Geminiによる要約処理の追加 ---
+    let aiSummary = "AI分析を生成できませんでした。";
+    if (filteredNews.length > 0) {
+      try {
+        const titlesForAi = filteredNews.slice(0, 15).map(n => n.title).join('\n');
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `以下の最新サイバーセキュリティニュースのタイトルから、今日特に警戒すべき傾向を分析し、500文字程度の日本語で要約してください。重要なキーワードは太字にしてください。：\n\n${titlesForAi}` }] }]
+          })
+        });
+        const geminiData = await geminiRes.json();
+        aiSummary = geminiData.candidates[0].content.parts[0].text;
+      } catch (e) {
+        console.error("Gemini Error:", e);
+      }
+    }
+
+    return NextResponse.json({ news: filteredNews, summary: aiSummary });
   } catch (error) {
-    return NextResponse.json([]);
+    return NextResponse.json({ news: [], summary: "" });
   }
 }
