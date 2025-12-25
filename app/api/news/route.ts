@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 
-// キャッシュを無効化し、常に最新のRSSを取得させる設定
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export privacy function GET() {
   const SOURCES = [
     { name: "THE_HACKER_NEWS", url: "https://feeds.feedburner.com/TheHackersNews", color: "#1d4ed8" },
     { name: "BLEEPING_COMPUTER", url: "https://www.bleepingcomputer.com/feed/", color: "#000000" },
@@ -15,15 +14,11 @@ export async function GET() {
   try {
     const allNews = await Promise.all(SOURCES.map(async (source) => {
       try {
-        // キャッシュを無視してフェッチ
         const res = await fetch(source.url, { cache: 'no-store' });
         const xml = await res.text();
-        
-        // <item>タグで分割
         const items = xml.split('<item>').slice(1);
 
         return items.map(item => {
-          // タイトルとリンクを抽出（CDATA対応）
           const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
           const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/);
           const pubDateMatch = item.match(/<pubDate>(.*?)<\/pubDate>/);
@@ -34,21 +29,26 @@ export async function GET() {
           
           const dateObj = new Date(pubDate);
           
+          // 【重要】Vercelサーバー上でも日本時間(JST)で日付文字列を作る
+          const jstDate = isNaN(dateObj.getTime()) 
+            ? "Unknown" 
+            : new Intl.DateTimeFormat('ja-JP', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                timeZone: 'Asia/Tokyo' 
+              }).format(dateObj).replace(/\//g, '.');
+          
           return {
             title,
             link,
-            date: isNaN(dateObj.getTime()) ? "Unknown" : dateObj.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '.'),
+            date: jstDate,
             timestamp: dateObj.getTime() || 0,
             source: source.name,
             sourceColor: source.color
           };
         });
-      } catch (e) { 
-        return []; 
-      }
+      } catch (e) { return []; }
     }));
 
-    // フィルタリング（インシデントに関連するキーワード）
     const incidentKeywords = ["ransomware", "breach", "leak", "hacked", "stolen", "attack", "compromised", "malware", "cyber", "espionage", "security", "threat", "incident"];
     const noiseKeywords = ["patch", "update", "fix"];
 
