@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 
+// キャッシュを無効化し、常に最新のRSSを取得させる設定
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const SOURCES = [
     { name: "THE_HACKER_NEWS", url: "https://feeds.feedburner.com/TheHackersNews", color: "#1d4ed8" },
@@ -11,19 +15,23 @@ export async function GET() {
   try {
     const allNews = await Promise.all(SOURCES.map(async (source) => {
       try {
-        const res = await fetch(source.url, { 
-          next: { revalidate: 300 } // 5分間キャッシュして効率化
-        });
+        // キャッシュを無視してフェッチ
+        const res = await fetch(source.url, { cache: 'no-store' });
         const xml = await res.text();
         
         // <item>タグで分割
         const items = xml.split('<item>').slice(1);
 
         return items.map(item => {
-          // 正規表現をより柔軟に（改行等に対応）
-          const title = item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/)?.[1].trim() || "";
-          const link = item.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/)?.[1].trim() || "#";
-          const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1] || "";
+          // タイトルとリンクを抽出（CDATA対応）
+          const titleMatch = item.match(/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/);
+          const linkMatch = item.match(/<link>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/);
+          const pubDateMatch = item.match(/<pubDate>(.*?)<\/pubDate>/);
+
+          const title = titleMatch ? titleMatch[1].trim() : "";
+          const link = linkMatch ? linkMatch[1].trim() : "#";
+          const pubDate = pubDateMatch ? pubDateMatch[1] : "";
+          
           const dateObj = new Date(pubDate);
           
           return {
@@ -36,18 +44,16 @@ export async function GET() {
           };
         });
       } catch (e) { 
-        console.error(`Error fetching ${source.name}:`, e);
         return []; 
       }
     }));
 
-    // フィルタリングを少し緩めてテスト
-    const incidentKeywords = ["ransomware", "breach", "leak", "hacked", "stolen", "attack", "compromised", "malware", "cyber", "espionage", "security", "threat"];
-    // ノイズ判定を一旦コメントアウトして、ニュースが出るか確認するのも手です
-    const noiseKeywords = ["patch", "update"]; 
+    // フィルタリング（インシデントに関連するキーワード）
+    const incidentKeywords = ["ransomware", "breach", "leak", "hacked", "stolen", "attack", "compromised", "malware", "cyber", "espionage", "security", "threat", "incident"];
+    const noiseKeywords = ["patch", "update", "fix"];
 
     const filteredNews = allNews.flat()
-      .filter(n => n.title !== "" && n.timestamp !== 0) // 最低限のバリデーション
+      .filter(n => n.title !== "" && n.timestamp !== 0)
       .filter(n => 
         incidentKeywords.some(key => n.title.toLowerCase().includes(key)) && 
         !noiseKeywords.some(key => n.title.toLowerCase().includes(key))
