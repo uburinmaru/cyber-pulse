@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #fbfbfd;
+  color: #1d1d1f;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* リンクの青色と下線を完全に消去 */
+a, a:visited {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
+.brand-logo {
+  font-size: 3.5rem;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.05em;
+  background: linear-gradient(135deg, #ff0000 0%, #b91c1c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* インシデントカード：左右に十分な余白を確保 */
+.incident-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 40px;
+  margin-bottom: 24px;
+  border: 1px solid rgba(0,0,0,0.04);
+  border-left: 10px solid #ff0000;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: block;
+}
+
+.incident-card:hover {
+  transform: translateX(12px);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.06);
+  background-color: #fffdfd;
+}
+
+/* ソースバッジ：タイトルの上に独立させる */
+.source-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+  border-radius: 4px;
+  margin-bottom: 20px; /* タイトルとの間に十分な空間を作る */
+  text-transform: uppercase;
+}
