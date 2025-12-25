@@ -47,38 +47,38 @@ export async function GET() {
     if (filteredNews.length > 0) {
       try {
         const titlesForAi = filteredNews.slice(0, 15).map(n => n.title).join('\n');
-        
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `あなたはサイバーセキュリティ戦略顧問です。全国の経営者・社長に向けて、最新ニュースから以下の構成で日本語のレポートを作成してください。
+            contents: [{ parts: [{ text: `あなたは世界屈指のサイバー戦略アナリストです。最新ニュースを分析し、全国の経営層に向けて専門的かつ深い洞察を含んだ日本語レポートを作成してください。
 
-1. 【経営リスク概況】
-現在の主要な脅威を、事業継続や経済的損失の観点から150文字程度で。
-2. 【今すぐ確認すべき防衛線】
-現場に指示すべき具体的なチェックポイントを150文字程度で。
-3. 【戦略的インサイト】
-中長期的な投資や組織文化として意識すべきことを150文字程度で。
+【制約事項】
+・専門家向け、といった直接的な表現は避けてください。
+・マークダウン記号（## など）は使用禁止。
+・各項目の見出しには必ず指定の絵文字を使用してください。
 
-最後に【本日のセキュリティ・クイズ】として、経営者が知っておくべき知識を「問題」と「解説」の形式で1つ作成してください。
+🚨 【深層リスク：事業継続へのインパクト】
+（技術的背景を踏まえた、今起きていることの本質的な危険性を150文字程度で）
 
-ニュースリスト：
+🛡️ 【戦術的防衛：今、現場に命じるべきこと】
+（専門家視点で優先すべき実戦的な防御策を150文字程度で）
+
+💡 【戦略的潮流：次なる脅威の予兆】
+（単発ニュースから読み取れる、今後の攻撃トレンドの予測を150文字程度で）
+
+ニュース：
 ${titlesForAi}` }] }]
           })
         });
-
         const geminiData = await geminiRes.json();
         if (geminiData.candidates && geminiData.candidates[0].content) {
           aiSummary = geminiData.candidates[0].content.parts[0].text;
         }
-      } catch (e) {
-        aiSummary = "通信エラーが発生しました。";
-      }
+      } catch (e) { aiSummary = "分析生成エラー"; }
     }
-
     return NextResponse.json({ news: filteredNews, summary: aiSummary });
   } catch (error) {
-    return NextResponse.json({ news: [], summary: "システムエラーが発生しました。" });
+    return NextResponse.json({ news: [], summary: "" });
   }
 }
