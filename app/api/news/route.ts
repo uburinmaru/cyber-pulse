@@ -48,8 +48,8 @@ export async function GET() {
       try {
         const titlesForAi = filteredNews.slice(0, 15).map(n => n.title).join('\n');
         
-        // ★モデル名を gemini-2.5-flash-lite-preview-09-2025 に指定
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+        // ★モデル名を最新の gemini-2.5-flash-lite に変更
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
