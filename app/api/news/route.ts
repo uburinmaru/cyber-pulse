@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
-// ★取得したAPIキーを貼り付けてください
+// ★取得したAPIキーを正確に貼り付けてください
 const GEMINI_API_KEY = "AIzaSyAjoRhAlz9B9-EuIIjy_nYBDYNKBE-gdLs";
 
 export async function GET() {
@@ -46,39 +46,38 @@ export async function GET() {
 
     if (filteredNews.length > 0) {
       try {
-        const titlesForAi = filteredNews.slice(0, 15).map(n => n.title).join('\n');
+        // タイムアウトを避けるため上位10件に制限
+        const titlesForAi = filteredNews.slice(0, 10).map(n => n.title).join('\n');
+        
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: `あなたは世界屈指のサイバー戦略アナリストです。最新ニュースを分析し、全国の経営層に向けて専門的かつ深い洞察を含んだ日本語レポートを作成してください。
 
-【制約事項】
-・専門家向け、といった直接的な表現は避けてください。
-・マークダウン記号（## など）は使用禁止。
-・各項目の見出しには必ず指定の絵文字を使用してください。
-
 🚨 【深層リスク：事業継続へのインパクト】
-（技術的背景を踏まえた、今起きていることの本質的な危険性を150文字程度で）
-
 🛡️ 【戦術的防衛：今、現場に命じるべきこと】
-（専門家視点で優先すべき実戦的な防御策を150文字程度で）
-
 💡 【戦略的潮流：次なる脅威の予兆】
-（単発ニュースから読み取れる、今後の攻撃トレンドの予測を150文字程度で）
 
 ニュース：
 ${titlesForAi}` }] }]
           })
         });
+
         const geminiData = await geminiRes.json();
-        if (geminiData.candidates && geminiData.candidates[0].content) {
+
+        if (geminiData.error) {
+          aiSummary = `エラー: ${geminiData.error.message}`;
+        } else if (geminiData.candidates && geminiData.candidates[0].content) {
           aiSummary = geminiData.candidates[0].content.parts[0].text;
         }
-      } catch (e) { aiSummary = "分析生成エラー"; }
+      } catch (e: any) {
+        aiSummary = "分析実行中にエラーが発生しました。";
+      }
     }
+
     return NextResponse.json({ news: filteredNews, summary: aiSummary });
   } catch (error) {
-    return NextResponse.json({ news: [], summary: "" });
+    return NextResponse.json({ news: [], summary: "システム全体のエラーです。" });
   }
 }
