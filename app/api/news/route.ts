@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
-// ★取得したAPIキーを正確に貼り付けてください
 const GEMINI_API_KEY = "AIzaSyAjoRhAlz9B9-EuIIjy_nYBDYNKBE-gdLs";
 
 export async function GET() {
@@ -48,20 +47,25 @@ export async function GET() {
       try {
         const titlesForAi = filteredNews.slice(0, 15).map(n => n.title).join('\n');
         
-        // ★モデル名を最新の gemini-2.5-flash-lite に変更
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `あなたはサイバーセキュリティの専門家です。以下の最新ニュースのタイトルから、今日特に警戒すべき傾向を分析し、500文字程度の日本語で要約してください。重要なキーワードは太字にしてください。：\n\n${titlesForAi}` }] }]
+            contents: [{ parts: [{ text: `あなたはサイバーセキュリティの最高責任者（CISO）であり、同時に教育者でもあります。以下の最新ニュースから、以下の構成で日本語の分析レポートを作成してください。
+
+1. 【エグゼクティブ・サマリー】(300文字程度)
+経営層や組織のリーダー向けに、現在進行中の主要な脅威、組織的リスク、および必要な戦略的判断を専門用語を交えて鋭く分析してください。
+
+2. 【学生向け解説：今日のサイバー講義】(300文字程度)
+セキュリティを学ぶ学生向けに、今日起きている事象を噛み砕いて説明してください。なぜその攻撃が重要なのか、どのような仕組みなのか、将来のエンジニアとして何を学ぶべきかを伝えてください。
+
+ニュースリスト：
+${titlesForAi}` }] }]
           })
         });
 
         const geminiData = await geminiRes.json();
-
-        if (geminiData.error) {
-          aiSummary = `APIエラー: ${geminiData.error.message}`;
-        } else if (geminiData.candidates && geminiData.candidates[0].content) {
+        if (geminiData.candidates && geminiData.candidates[0].content) {
           aiSummary = geminiData.candidates[0].content.parts[0].text;
         }
       } catch (e) {
