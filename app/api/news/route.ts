@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
+// 1時間(3600秒)キャッシュしてAPI制限を回避する
+export const revalidate = 3600; 
 
-// ★取得したAPIキーを正確に貼り付けてください
+// ★あなたのAPIキーをここに貼り付けてください
 const GEMINI_API_KEY = "AIzaSyAjoRhAlz9B9-EuIIjy_nYBDYNKBE-gdLs";
 
 export async function GET() {
@@ -17,7 +17,7 @@ export async function GET() {
   try {
     const allNews = await Promise.all(SOURCES.map(async (source) => {
       try {
-        const res = await fetch(source.url, { cache: 'no-store' });
+        const res = await fetch(source.url, { next: { revalidate: 3600 } });
         const xml = await res.text();
         const items = xml.split('<item>').slice(1);
         return items.map(item => {
@@ -46,7 +46,6 @@ export async function GET() {
 
     if (filteredNews.length > 0) {
       try {
-        // タイムアウトを避けるため上位10件に制限
         const titlesForAi = filteredNews.slice(0, 10).map(n => n.title).join('\n');
         
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
@@ -67,17 +66,17 @@ ${titlesForAi}` }] }]
         const geminiData = await geminiRes.json();
 
         if (geminiData.error) {
-          aiSummary = `エラー: ${geminiData.error.message}`;
+          aiSummary = `API制限中: ${geminiData.error.message}`;
         } else if (geminiData.candidates && geminiData.candidates[0].content) {
           aiSummary = geminiData.candidates[0].content.parts[0].text;
         }
-      } catch (e: any) {
-        aiSummary = "分析実行中にエラーが発生しました。";
+      } catch (e) {
+        aiSummary = "分析エンジン待機中...";
       }
     }
 
     return NextResponse.json({ news: filteredNews, summary: aiSummary });
   } catch (error) {
-    return NextResponse.json({ news: [], summary: "システム全体のエラーです。" });
+    return NextResponse.json({ news: [], summary: "システム復旧中..." });
   }
 }
