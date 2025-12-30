@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 
 export const revalidate = 3600; 
 
-// ★取得したAPIキーを正確に貼り付けてください
-const GEMINI_API_KEY = "AIzaSyDXaNVp1QLGqe-nQGRF2q8-7KAqv9SQRZA";
+// 直接書かずに、環境変数から読み出す設定に変更
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export async function GET() {
   const SOURCES = [
@@ -47,24 +47,15 @@ export async function GET() {
       try {
         const titlesForAi = filteredNews.slice(0, 10).map(n => n.title).join('\n');
         
+        // Gemini 2.5 Flash-Lite を使用
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_API_KEY}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `サイバーセキュリティのプロとして、経営層向けに最新の脅威を極めて濃密に分析してください。
-
-【厳守事項】
-・「宛先」「序文」「作成日」などは一切不要。いきなり本題から書くこと。
-・マークダウン記号（# や *）は絶対に使用しない。
-・改行と絵文字を効果的に使い、視覚的に分かりやすくすること。
-
-以下の2構成で、各300字程度でまとめてください：
+            contents: [{ parts: [{ text: `あなたは世界屈指のサイバー戦略アナリストです。最新ニュースを分析し、経営層に向けて深い洞察を含んだレポートを作成してください。
 
 🚨 最新インシデントの深層分析
-（現在の攻撃の技術的本質、標的となっている資産、事業継続への具体的リスクを詳細に）
-
 🛡️ 実効的な防御技術と対策
-（EDR/XDR、認証基盤、パッチ管理など、現場が導入・強化すべき技術的詳細と優先順位を詳細に）
 
 ニュース：
 ${titlesForAi}` }] }]
@@ -75,8 +66,11 @@ ${titlesForAi}` }] }]
         if (geminiData.candidates && geminiData.candidates[0].content) {
           aiSummary = geminiData.candidates[0].content.parts[0].text;
         }
-      } catch (e) { aiSummary = "分析エンジン待機中..."; }
+      } catch (e) {
+        aiSummary = "分析エンジン待機中...";
+      }
     }
+
     return NextResponse.json({ news: filteredNews, summary: aiSummary });
   } catch (error) {
     return NextResponse.json({ news: [], summary: "システム復旧中..." });
