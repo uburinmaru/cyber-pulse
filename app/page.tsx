@@ -12,75 +12,92 @@ export default function Home() {
       .then(data => {
         setCurrent(data);
         setLoading(false);
-        const saved = JSON.parse(localStorage.getItem('cyber_pulse_v5') || '[]');
-        // 同じ内容でなければ保存
+        const saved = JSON.parse(localStorage.getItem('cyber_pulse_v6') || '[]');
         if (data.summary && !saved.some((l: any) => l.summary === data.summary)) {
-          const updated = [data, ...saved].slice(0, 30);
+          const updated = [data, ...saved].slice(0, 20);
           setLogs(updated);
-          localStorage.setItem('cyber_pulse_v5', JSON.stringify(updated));
-        } else {
-          setLogs(saved);
-        }
+          localStorage.setItem('cyber_pulse_v6', JSON.stringify(updated));
+        } else { setLogs(saved); }
       }).catch(() => setLoading(false));
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-6 md:p-12 lg:p-24">
-      {/* Header */}
-      <header className="max-w-4xl mx-auto mb-16 border-b-4 border-slate-900 pb-8">
-        <h1 className="text-5xl md:text-7xl font-black tracking-tighter italic mb-4">CYBER PULSE</h1>
-        <p className="text-xs font-bold tracking-[0.4em] text-slate-400 uppercase">Expert Intelligence Report</p>
-      </header>
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans selection:bg-red-100">
+      <main className="max-w-[900px] mx-auto px-6 py-16 md:py-24">
+        
+        {/* Header Section */}
+        <header className="mb-20 space-y-4">
+          <div className="flex items-center gap-4">
+            <h1 className="text-4xl md:text-6xl font-black tracking-tight uppercase italic text-slate-950">
+              Cyber Pulse
+            </h1>
+            <div className="h-[2px] flex-grow bg-slate-200"></div>
+          </div>
+          <p className="text-[11px] font-bold tracking-[0.5em] text-slate-400 uppercase">
+            Intelligence Analysis Dashboard // 2025
+          </p>
+        </header>
 
-      <main className="max-w-4xl mx-auto space-y-24">
-        {/* Main Incident Section */}
-        <section>
-          <div className="flex items-center gap-3 mb-6">
-            <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest">LATEST</span>
-            <span className="text-xs font-bold text-slate-400">{current?.date}</span>
+        {/* Current Intelligence Card */}
+        <section className="mb-32">
+          <div className="flex justify-between items-end mb-8 px-2">
+            <div className="space-y-1">
+              <span className="bg-red-600 text-white text-[9px] font-black px-3 py-1 uppercase tracking-widest rounded-sm">Priority Alpha</span>
+              <h2 className="text-2xl font-black text-slate-900">{current?.title || "Scanning..."}</h2>
+            </div>
+            <span className="text-xs font-mono font-bold text-slate-400">{current?.date}</span>
           </div>
           
-          <div className="bg-white border-2 border-slate-900 p-8 md:p-12 shadow-[12px_12px_0px_0px_rgba(15,23,42,1)]">
+          <div className="bg-white rounded-2xl border border-slate-200 p-8 md:p-14 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)]">
             {loading ? (
-              <div className="py-20 text-center text-slate-400 font-bold animate-pulse">ANALYZING NEWS...</div>
+              <div className="py-20 text-center space-y-4">
+                <div className="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-xs font-bold text-slate-300 tracking-[0.3em]">SYNCHRONIZING SOURCES</p>
+              </div>
             ) : (
-              <div className="text-lg md:text-xl leading-[2.2] font-medium text-slate-800 whitespace-pre-wrap">
+              <div className="text-base md:text-lg leading-[2] text-slate-700 whitespace-pre-wrap font-medium">
                 {current?.summary}
               </div>
             )}
           </div>
         </section>
 
-        {/* Archives Section: 日付ごとにまとめた表示 */}
-        <section className="pt-20">
-          <h2 className="text-3xl font-black mb-12 italic border-l-8 border-slate-900 pl-4 uppercase">Archive Logs</h2>
-          <div className="space-y-8">
-            {logs.length === 0 ? (
-              <p className="text-slate-400 font-bold">No history available.</p>
-            ) : (
-              logs.map((log, i) => (
-                <div key={i} className="group relative">
-                  <div className="absolute -left-2 top-0 bottom-0 w-1 bg-slate-200 group-hover:bg-red-500 transition-colors"></div>
-                  <div className="pl-6 py-2">
-                    <span className="text-[10px] font-black text-slate-400 mb-2 block tracking-widest uppercase">{log.date}</span>
-                    <h3 className="text-xl font-black text-slate-900 mb-4 group-hover:text-red-600 transition-colors">
+        {/* Archive Section */}
+        <section>
+          <div className="flex items-center gap-6 mb-16">
+            <h3 className="text-xs font-black tracking-[0.4em] text-slate-400 uppercase whitespace-nowrap italic">Archive Logs</h3>
+            <div className="h-[1px] w-full bg-slate-100"></div>
+          </div>
+          
+          <div className="space-y-6">
+            {logs.map((log, i) => (
+              <details key={i} className="group overflow-hidden bg-white border border-slate-100 rounded-xl hover:border-slate-300 transition-all duration-300 shadow-sm">
+                <summary className="flex items-center justify-between p-6 md:p-8 cursor-pointer list-none select-none">
+                  <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-10">
+                    <span className="text-[10px] font-bold font-mono text-slate-300 uppercase">{log.date}</span>
+                    <span className="text-sm font-black text-slate-800 group-open:text-red-600 transition-colors uppercase tracking-tight">
                       {log.title}
-                    </h3>
-                    <div className="bg-white border border-slate-200 p-6 text-slate-600 leading-relaxed text-sm whitespace-pre-wrap">
-                      {log.summary}
-                    </div>
+                    </span>
                   </div>
+                  <span className="text-slate-300 text-xs group-open:rotate-180 transition-transform font-bold">▼</span>
+                </summary>
+                <div className="px-8 pb-10 md:px-14 md:pb-14 pt-2 text-slate-500 leading-relaxed text-sm md:text-base whitespace-pre-wrap font-medium">
+                  {log.summary}
                 </div>
-              ))
-            )}
+              </details>
+            ))}
           </div>
         </section>
-      </main>
 
-      <footer className="max-w-4xl mx-auto mt-40 pt-10 border-t border-slate-200 text-[10px] font-bold text-slate-300 tracking-widest uppercase flex justify-between">
-        <span>Strategic Intelligence Unit</span>
-        <span>© 2025 CP Pulse</span>
-      </footer>
+        <footer className="mt-40 text-center space-y-4 border-t border-slate-100 pt-16">
+          <p className="text-[10px] font-black text-slate-200 tracking-[0.8em] uppercase italic">
+            Confidential Feed // Unauthorized Access Prohibited
+          </p>
+          <p className="text-[10px] font-bold text-slate-300 uppercase">
+            © 2025 CP Intelligence Pulse
+          </p>
+        </footer>
+      </main>
     </div>
   );
 }

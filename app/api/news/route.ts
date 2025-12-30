@@ -4,7 +4,6 @@ export const revalidate = 3600;
 
 export async function GET() {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
   const SOURCES = [
     { name: "BLEEPING_COMPUTER", url: "https://www.bleepingcomputer.com/feed/" },
     { name: "THE_REGISTER", url: "https://www.theregister.com/security/headlines.atom" }
@@ -16,7 +15,7 @@ export async function GET() {
         const res = await fetch(source.url, { next: { revalidate: 3600 } });
         const text = await res.text();
         const matches = text.match(/<title[^>]*>([\s\S]*?)<\/title>/g) || [];
-        return matches.map(m => m.replace(/<[^>]+>/g, '').trim()).slice(1, 8);
+        return matches.map(m => m.replace(/<[^>]+>/g, '').trim()).slice(1, 10);
       } catch { return []; }
     }));
 
@@ -26,28 +25,29 @@ export async function GET() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: `サイバーセキュリティ・アナリストとして報告。
-最新ニュースから重大なインシデントを1つ選び、詳細に解説せよ。
+        contents: [{ parts: [{ text: `サイバーインテリジェンス官として報告。
+最新ニュース群から「最も重大なインシデント」を1つ選び、報告せよ。
 
 【ルール】
-・挨拶、前置き、記号（#や*）は禁止。
-・「🚨 状況分析」と「🛡️ 推奨対策」の2項目。
-・300字程度で具体的に。
+・挨拶や前置き、マークダウン（#や*）は一切禁止。
+・1行目は必ず「事件を象徴する簡潔なタイトル」のみを記載。
+・2行目以降に「🚨 状況分析」「🛡️ 推奨対策」を記述。
 
-ソース：
+ニュース：
 ${titles}` }] }]
       })
     });
 
     const data = await geminiRes.json();
-    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No intelligence.";
+    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const lines = aiText.split('\n');
 
     return NextResponse.json({ 
-      summary: aiText.trim(),
-      date: new Date().toLocaleDateString('ja-JP'),
-      title: aiText.split('\n')[0]?.replace('🚨 ', '') || "インシデント・サマリー"
+      title: lines[0]?.trim() || "Critical Incident",
+      summary: lines.slice(1).join('\n').trim(),
+      date: new Date().toLocaleDateString('ja-JP')
     });
   } catch {
-    return NextResponse.json({ summary: "SYSTEM_ERROR" });
+    return NextResponse.json({ summary: "SYSTEM ERROR" });
   }
 }
