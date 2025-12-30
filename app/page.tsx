@@ -12,57 +12,66 @@ export default function Home() {
       .then(data => {
         setCurrent(data);
         setLoading(false);
-        // 履歴の管理
-        const saved = JSON.parse(localStorage.getItem('cyber_pulse_logs_v3') || '[]');
-        if (data.title && !saved.some((l: any) => l.date === data.date)) {
-          const updated = [{ ...data }, ...saved].slice(0, 15);
+        const saved = JSON.parse(localStorage.getItem('cyber_pulse_v4') || '[]');
+        if (data.title && !saved.some((l: any) => l.summary === data.summary)) {
+          const updated = [data, ...saved].slice(0, 20);
           setLogs(updated);
-          localStorage.setItem('cyber_pulse_logs_v3', JSON.stringify(updated));
-        } else {
-          setLogs(saved);
-        }
-      })
-      .catch(() => setLoading(false));
+          localStorage.setItem('cyber_pulse_v4', JSON.stringify(updated));
+        } else { setLogs(saved); }
+      }).catch(() => setLoading(false));
   }, []);
 
   return (
-    <div className="w-full min-h-screen bg-white text-zinc-900 font-sans flex flex-col items-center p-6 md:p-12">
-      <header className="w-full max-w-[800px] mb-16 border-b-8 border-red-600 pb-8">
-        <h1 className="text-6xl md:text-8xl font-black italic tracking-tighter text-red-600 uppercase">Cyber<br/>Pulse</h1>
-        <p className="text-[10px] font-bold tracking-[0.5em] text-zinc-400 mt-4 uppercase">Elite Incident Intelligence</p>
+    <div className="min-h-screen bg-[#0a0a0a] text-zinc-400 font-mono p-4 md:p-12">
+      {/* Header */}
+      <header className="max-w-[1000px] mx-auto mb-20 border-b border-zinc-800 pb-10">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter mb-2 italic">CYBER PULSE</h1>
+            <p className="text-[10px] tracking-[0.6em] text-red-600 font-bold uppercase">Critical Incident Feed // Level 5 Clearance</p>
+          </div>
+          <div className="text-right hidden md:block border-l border-zinc-800 pl-6">
+            <p className="text-[10px] text-zinc-600 uppercase">System Status</p>
+            <p className="text-xs text-green-500 font-bold tracking-widest">● LIVE_FEED</p>
+          </div>
+        </div>
       </header>
 
-      <main className="w-full max-w-[800px] space-y-20">
-        {loading ? (
-          <div className="py-20 text-center font-black animate-pulse text-zinc-200 uppercase tracking-widest">Scanning Network...</div>
-        ) : (
-          <section>
-            <div className="flex items-center gap-4 mb-6">
-              <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest">Today's Brief</span>
-              <span className="text-xs font-mono font-bold text-zinc-400">{current?.date}</span>
-            </div>
-            <div className="bg-zinc-50 p-10 md:p-16 border border-zinc-100 shadow-sm">
-              <div className="text-lg md:text-xl leading-[2.5] font-bold text-zinc-800 whitespace-pre-wrap tracking-tight">
+      <main className="max-w-[1000px] mx-auto space-y-24">
+        {/* Current Brief */}
+        <section className="relative">
+          <div className="absolute -top-3 left-6 bg-red-600 text-white text-[9px] font-black px-3 py-1 z-10 uppercase tracking-widest">Priority Alpha</div>
+          <div className="bg-[#111] border border-zinc-800 p-8 md:p-16 shadow-2xl">
+            {loading ? (
+              <div className="py-20 text-center animate-pulse text-zinc-600 tracking-widest">FETCHING INTELLIGENCE...</div>
+            ) : (
+              <div className="text-lg md:text-xl leading-[2.2] text-zinc-200 whitespace-pre-wrap">
                 {current?.summary}
               </div>
-            </div>
-          </section>
-        )}
+            )}
+          </div>
+        </section>
 
-        {/* 履歴セクション：日付ごとにまとめる */}
-        <section className="pt-20 border-t border-zinc-100">
-          <h2 className="text-2xl font-black mb-10 italic uppercase tracking-tighter">Incident Logs</h2>
-          <div className="space-y-6">
+        {/* Logs Section */}
+        <section>
+          <div className="flex items-center gap-6 mb-12">
+            <h2 className="text-xs font-black tracking-[0.4em] uppercase text-zinc-500 italic">Archive Logs</h2>
+            <div className="h-[1px] bg-zinc-800 flex-grow"></div>
+          </div>
+          
+          <div className="grid gap-2">
             {logs.map((log, i) => (
-              <details key={i} className="group border border-zinc-100 bg-white">
-                <summary className="flex items-center justify-between p-6 cursor-pointer hover:bg-zinc-50 transition-all list-none">
-                  <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-                    <span className="text-[10px] font-bold font-mono text-zinc-400">{log.date}</span>
-                    <span className="text-sm font-black text-zinc-900 uppercase group-open:text-red-600 transition-colors">{log.title}</span>
+              <details key={i} className="group bg-[#111] border border-zinc-900 hover:border-zinc-700 transition-all">
+                <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
+                  <div className="flex items-center gap-8">
+                    <span className="text-[10px] text-zinc-600 font-bold w-20">{log.date}</span>
+                    <span className="text-sm font-black text-zinc-400 group-open:text-red-500 transition-colors uppercase tracking-tight">
+                      {log.title}
+                    </span>
                   </div>
-                  <span className="text-zinc-300 font-bold group-open:rotate-180 transition-transform">↓</span>
+                  <span className="text-zinc-700 group-open:rotate-180 transition-transform">▼</span>
                 </summary>
-                <div className="p-8 md:p-12 bg-zinc-50/50 border-t border-zinc-50 text-base leading-[2] font-bold text-zinc-600 whitespace-pre-wrap">
+                <div className="px-14 pb-12 text-zinc-500 leading-relaxed text-sm whitespace-pre-wrap border-t border-zinc-900/50 pt-8">
                   {log.summary}
                 </div>
               </details>
@@ -71,8 +80,9 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="mt-40 text-[9px] font-black text-zinc-200 tracking-widest uppercase">
-        © Intelligence Pulse // Incident Tracking Unit
+      <footer className="max-w-[1000px] mx-auto mt-40 pt-10 border-t border-zinc-900 flex justify-between text-[9px] font-bold text-zinc-700 tracking-widest uppercase italic">
+        <span>© CYBER PULSE INTELLIGENCE UNIT</span>
+        <span>2025 // ENCRYPTED</span>
       </footer>
     </div>
   );
