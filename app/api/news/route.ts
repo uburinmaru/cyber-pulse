@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 
-// 1時間(3600秒)キャッシュしてAPI制限を回避する
 export const revalidate = 3600; 
 
-// ★あなたのAPIキーをここに貼り付けてください
+// ★取得したAPIキーを正確に貼り付けてください
 const GEMINI_API_KEY = "AIzaSyDzpBHu_xfHJ6HArkdeT-esCCNH0sWrbvo";
 
 export async function GET() {
@@ -42,7 +41,7 @@ export async function GET() {
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 40);
 
-    let aiSummary = "AI分析を生成できませんでした。";
+    let aiSummary = "";
 
     if (filteredNews.length > 0) {
       try {
@@ -52,11 +51,20 @@ export async function GET() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `あなたは世界屈指のサイバー戦略アナリストです。最新ニュースを分析し、全国の経営層に向けて専門的かつ深い洞察を含んだ日本語レポートを作成してください。
+            contents: [{ parts: [{ text: `サイバーセキュリティのプロとして、経営層向けに最新の脅威を極めて濃密に分析してください。
 
-🚨 【深層リスク：事業継続へのインパクト】
-🛡️ 【戦術的防衛：今、現場に命じるべきこと】
-💡 【戦略的潮流：次なる脅威の予兆】
+【厳守事項】
+・「宛先」「序文」「作成日」などは一切不要。いきなり本題から書くこと。
+・マークダウン記号（# や *）は絶対に使用しない。
+・改行と絵文字を効果的に使い、視覚的に分かりやすくすること。
+
+以下の2構成で、各300字程度でまとめてください：
+
+🚨 最新インシデントの深層分析
+（現在の攻撃の技術的本質、標的となっている資産、事業継続への具体的リスクを詳細に）
+
+🛡️ 実効的な防御技術と対策
+（EDR/XDR、認証基盤、パッチ管理など、現場が導入・強化すべき技術的詳細と優先順位を詳細に）
 
 ニュース：
 ${titlesForAi}` }] }]
@@ -64,17 +72,11 @@ ${titlesForAi}` }] }]
         });
 
         const geminiData = await geminiRes.json();
-
-        if (geminiData.error) {
-          aiSummary = `API制限中: ${geminiData.error.message}`;
-        } else if (geminiData.candidates && geminiData.candidates[0].content) {
+        if (geminiData.candidates && geminiData.candidates[0].content) {
           aiSummary = geminiData.candidates[0].content.parts[0].text;
         }
-      } catch (e) {
-        aiSummary = "分析エンジン待機中...";
-      }
+      } catch (e) { aiSummary = "分析エンジン待機中..."; }
     }
-
     return NextResponse.json({ news: filteredNews, summary: aiSummary });
   } catch (error) {
     return NextResponse.json({ news: [], summary: "システム復旧中..." });
