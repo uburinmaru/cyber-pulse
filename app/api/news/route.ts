@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export const revalidate = 3600; 
 
 // ★取得したAPIキーを正確に貼り付けてください
-const GEMINI_API_KEY = "AIzaSyDzpBHu_xfHJ6HArkdeT-esCCNH0sWrbvo";
+const GEMINI_API_KEY = "AIzaSyDXaNVp1QLGqe-nQGRF2q8-7KAqv9SQRZA";
 
 export async function GET() {
   const SOURCES = [
