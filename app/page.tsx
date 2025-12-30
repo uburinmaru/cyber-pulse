@@ -1,94 +1,66 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 
 export default function Home() {
-  const [groupedNews, setGroupedNews] = useState<Record<string, any[]>>({});
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState("");
-
-  const loadData = useCallback(async () => {
-    try {
-      const res = await fetch('/api/news');
-      const data = await res.json();
-      if (data.news && data.news.length > 0) {
-        const groups = data.news.reduce((acc: any, item: any) => {
-          const d = item.date;
-          if (!acc[d]) acc[d] = [];
-          acc[d].push(item);
-          return acc;
-        }, {});
-        setGroupedNews(groups);
-        setSummary(data.summary);
-      }
-      setLastUpdate(new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }));
-      setLoading(false);
-    } catch (e) { setLoading(false); }
-  }, []);
 
   useEffect(() => {
-    loadData();
-    // 1時間(3,600,000ms)ごとに更新
-    const interval = setInterval(loadData, 3600000); 
-    return () => clearInterval(interval);
-  }, [loadData]);
+    // ブラウザから直接RSSを読みに行かず、作成したAPI経由でデータを取得します
+    fetch('/api/news')
+      .then(res => res.json())
+      .then(data => {
+        setSummary(data.summary);
+        setLoading(false);
+      })
+      .catch(() => {
+        setSummary("Intelligence synchronization failed.");
+        setLoading(false);
+      });
+  }, []);
 
   return (
-    <div className="w-full min-h-screen bg-[#fbfbfd] flex flex-col items-center px-6 md:px-24 overflow-x-hidden text-zinc-950">
-      <header className="w-full max-w-[900px] pt-32 pb-10">
-        <div className="flex flex-col items-start font-sans">
-          <div className="flex items-center gap-3 mb-6">
-            <span className="bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase">Verified Intelligence</span>
-            <span className="text-[10px] font-bold text-zinc-400 tracking-[0.4em] uppercase italic">Real-time Analysis</span>
-          </div>
-          <h1 className="brand-logo tracking-tighter">CYBER PULSE</h1>
+    <div className="w-full min-h-screen bg-white text-zinc-900 font-sans flex flex-col items-center">
+      <header className="w-full max-w-[800px] pt-24 pb-12 px-8">
+        <p className="text-[10px] font-black tracking-[0.4em] text-zinc-400 mb-4 uppercase">
+          Verified Intelligence Real-Time Analysis
+        </p>
+        <h1 className="text-7xl md:text-9xl font-black italic tracking-tighter text-red-600 leading-none mb-12">
+          CYBER<br/>PULSE
+        </h1>
+        <div className="space-y-2">
+          <h2 className="text-4xl font-black tracking-tight uppercase">Latest Intelligence</h2>
+          <p className="text-zinc-500 font-bold tracking-widest text-sm">世界から収集された最新の脅威実態</p>
         </div>
       </header>
 
-      {!loading && summary && (
-        <section className="w-full max-w-[900px] mt-10 p-10 bg-white border-t-[12px] border-red-600 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] rounded-b-3xl">
-          <div className="flex items-center justify-between mb-10 pb-6 border-b border-zinc-100">
-            <span className="text-xs font-black uppercase tracking-[0.4em] text-red-600">Executive Insight</span>
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-zinc-100">JSTSync {lastUpdate}</span>
-          </div>
-          <div className="text-lg leading-[2.2] font-bold text-zinc-800 whitespace-pre-wrap tracking-tight">
-            {summary}
-          </div>
-        </section>
-      )}
-
-      <main className="w-full max-w-[900px] py-40">
-        <div className="mb-24 flex flex-col items-start">
-          <h2 className="text-7xl font-black tracking-tighter text-zinc-950 mb-4 leading-none uppercase">Latest<br/>Intelligence</h2>
-          <div className="h-1.5 w-40 bg-red-600 mb-6"></div>
-          <p className="text-xs font-bold text-zinc-400 tracking-[0.5em] uppercase">世界から収集された最新の脅威実態</p>
-        </div>
-
+      <main className="w-full max-w-[800px] px-8 py-10 flex-grow">
         {loading ? (
-          <div className="text-center font-mono text-zinc-300 py-40 tracking-[1em] uppercase text-[10px] animate-pulse">Analyzing...</div>
-        ) : Object.keys(groupedNews).map((date) => (
-          <section key={date} className="mb-48">
-            <div className="flex items-center gap-8 mb-16">
-              <h2 className="text-5xl font-black tracking-tighter text-zinc-950 italic">{date}</h2>
-              <div className="h-[2px] bg-zinc-100 flex-grow"></div>
+          <div className="py-32 flex flex-col items-center">
+            <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-6"></div>
+            <p className="text-[10px] font-black tracking-[0.5em] text-zinc-300 uppercase">Connecting to Secure Sources...</p>
+          </div>
+        ) : (
+          <article className="space-y-12">
+            <div className="bg-zinc-50 border-l-[16px] border-red-600 p-10 md:p-16 shadow-sm">
+              <div className="text-lg md:text-xl leading-[2.5] font-bold text-zinc-800 whitespace-pre-wrap tracking-tight">
+                {summary || "現在、解析対象となる重要インシデントは確認されていません。"}
+              </div>
             </div>
-            <div className="flex flex-col gap-10 text-zinc-100">
-              {groupedNews[date].map((item, i) => (
-                <a key={i} href={item.link} target="_blank" rel="noopener noreferrer" className="incident-card group shadow-sm hover:shadow-2xl transition-all duration-500 bg-white">
-                  <span className="source-badge" style={{ backgroundColor: item.sourceColor }}>{item.source}</span>
-                  <h3 className="text-2xl lg:text-4xl font-extrabold leading-tight text-zinc-900 group-hover:text-red-600 transition-all duration-300 mb-12">
-                    {item.title}
-                  </h3>
-                  <div className="pt-8 border-t border-zinc-50 flex justify-between items-center text-[11px] font-black text-zinc-300 uppercase tracking-[0.2em]">
-                    <span>Analysis Context // Verified</span>
-                    <span className="text-red-600 opacity-0 group-hover:opacity-100 transform translate-x-[-20px] group-hover:translate-x-0 transition-all duration-500">Access Report →</span>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </section>
-        ))}
+
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full py-8 border-2 border-zinc-900 hover:bg-zinc-900 hover:text-white transition-all duration-500 font-black text-xs tracking-[1em] uppercase"
+            >
+              Update Intelligence
+            </button>
+          </article>
+        )}
       </main>
+
+      <footer className="w-full max-w-[800px] py-20 px-8 text-[9px] font-black text-zinc-300 tracking-[0.3em] uppercase border-t border-zinc-100 mt-20">
+        © Intelligence Pulse // Critical Infrastructure Defense
+      </footer>
     </div>
   );
 }
