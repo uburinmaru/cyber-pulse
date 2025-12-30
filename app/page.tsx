@@ -12,77 +12,74 @@ export default function Home() {
       .then(data => {
         setCurrent(data);
         setLoading(false);
-        const saved = JSON.parse(localStorage.getItem('cyber_pulse_v4') || '[]');
-        if (data.title && !saved.some((l: any) => l.summary === data.summary)) {
-          const updated = [data, ...saved].slice(0, 20);
+        const saved = JSON.parse(localStorage.getItem('cyber_pulse_v5') || '[]');
+        // 同じ内容でなければ保存
+        if (data.summary && !saved.some((l: any) => l.summary === data.summary)) {
+          const updated = [data, ...saved].slice(0, 30);
           setLogs(updated);
-          localStorage.setItem('cyber_pulse_v4', JSON.stringify(updated));
-        } else { setLogs(saved); }
+          localStorage.setItem('cyber_pulse_v5', JSON.stringify(updated));
+        } else {
+          setLogs(saved);
+        }
       }).catch(() => setLoading(false));
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-zinc-400 font-mono p-4 md:p-12">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans p-6 md:p-12 lg:p-24">
       {/* Header */}
-      <header className="max-w-[1000px] mx-auto mb-20 border-b border-zinc-800 pb-10">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter mb-2 italic">CYBER PULSE</h1>
-            <p className="text-[10px] tracking-[0.6em] text-red-600 font-bold uppercase">Critical Incident Feed // Level 5 Clearance</p>
-          </div>
-          <div className="text-right hidden md:block border-l border-zinc-800 pl-6">
-            <p className="text-[10px] text-zinc-600 uppercase">System Status</p>
-            <p className="text-xs text-green-500 font-bold tracking-widest">● LIVE_FEED</p>
-          </div>
-        </div>
+      <header className="max-w-4xl mx-auto mb-16 border-b-4 border-slate-900 pb-8">
+        <h1 className="text-5xl md:text-7xl font-black tracking-tighter italic mb-4">CYBER PULSE</h1>
+        <p className="text-xs font-bold tracking-[0.4em] text-slate-400 uppercase">Expert Intelligence Report</p>
       </header>
 
-      <main className="max-w-[1000px] mx-auto space-y-24">
-        {/* Current Brief */}
-        <section className="relative">
-          <div className="absolute -top-3 left-6 bg-red-600 text-white text-[9px] font-black px-3 py-1 z-10 uppercase tracking-widest">Priority Alpha</div>
-          <div className="bg-[#111] border border-zinc-800 p-8 md:p-16 shadow-2xl">
+      <main className="max-w-4xl mx-auto space-y-24">
+        {/* Main Incident Section */}
+        <section>
+          <div className="flex items-center gap-3 mb-6">
+            <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 uppercase tracking-widest">LATEST</span>
+            <span className="text-xs font-bold text-slate-400">{current?.date}</span>
+          </div>
+          
+          <div className="bg-white border-2 border-slate-900 p-8 md:p-12 shadow-[12px_12px_0px_0px_rgba(15,23,42,1)]">
             {loading ? (
-              <div className="py-20 text-center animate-pulse text-zinc-600 tracking-widest">FETCHING INTELLIGENCE...</div>
+              <div className="py-20 text-center text-slate-400 font-bold animate-pulse">ANALYZING NEWS...</div>
             ) : (
-              <div className="text-lg md:text-xl leading-[2.2] text-zinc-200 whitespace-pre-wrap">
+              <div className="text-lg md:text-xl leading-[2.2] font-medium text-slate-800 whitespace-pre-wrap">
                 {current?.summary}
               </div>
             )}
           </div>
         </section>
 
-        {/* Logs Section */}
-        <section>
-          <div className="flex items-center gap-6 mb-12">
-            <h2 className="text-xs font-black tracking-[0.4em] uppercase text-zinc-500 italic">Archive Logs</h2>
-            <div className="h-[1px] bg-zinc-800 flex-grow"></div>
-          </div>
-          
-          <div className="grid gap-2">
-            {logs.map((log, i) => (
-              <details key={i} className="group bg-[#111] border border-zinc-900 hover:border-zinc-700 transition-all">
-                <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
-                  <div className="flex items-center gap-8">
-                    <span className="text-[10px] text-zinc-600 font-bold w-20">{log.date}</span>
-                    <span className="text-sm font-black text-zinc-400 group-open:text-red-500 transition-colors uppercase tracking-tight">
+        {/* Archives Section: 日付ごとにまとめた表示 */}
+        <section className="pt-20">
+          <h2 className="text-3xl font-black mb-12 italic border-l-8 border-slate-900 pl-4 uppercase">Archive Logs</h2>
+          <div className="space-y-8">
+            {logs.length === 0 ? (
+              <p className="text-slate-400 font-bold">No history available.</p>
+            ) : (
+              logs.map((log, i) => (
+                <div key={i} className="group relative">
+                  <div className="absolute -left-2 top-0 bottom-0 w-1 bg-slate-200 group-hover:bg-red-500 transition-colors"></div>
+                  <div className="pl-6 py-2">
+                    <span className="text-[10px] font-black text-slate-400 mb-2 block tracking-widest uppercase">{log.date}</span>
+                    <h3 className="text-xl font-black text-slate-900 mb-4 group-hover:text-red-600 transition-colors">
                       {log.title}
-                    </span>
+                    </h3>
+                    <div className="bg-white border border-slate-200 p-6 text-slate-600 leading-relaxed text-sm whitespace-pre-wrap">
+                      {log.summary}
+                    </div>
                   </div>
-                  <span className="text-zinc-700 group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="px-14 pb-12 text-zinc-500 leading-relaxed text-sm whitespace-pre-wrap border-t border-zinc-900/50 pt-8">
-                  {log.summary}
                 </div>
-              </details>
-            ))}
+              ))
+            )}
           </div>
         </section>
       </main>
 
-      <footer className="max-w-[1000px] mx-auto mt-40 pt-10 border-t border-zinc-900 flex justify-between text-[9px] font-bold text-zinc-700 tracking-widest uppercase italic">
-        <span>© CYBER PULSE INTELLIGENCE UNIT</span>
-        <span>2025 // ENCRYPTED</span>
+      <footer className="max-w-4xl mx-auto mt-40 pt-10 border-t border-slate-200 text-[10px] font-bold text-slate-300 tracking-widest uppercase flex justify-between">
+        <span>Strategic Intelligence Unit</span>
+        <span>© 2025 CP Pulse</span>
       </footer>
     </div>
   );
